@@ -15,13 +15,33 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<ChilaqueriaDBContext>(options =>
 options.UseSqlServer(
-    builder.Configuration.GetConnectionString("ChilaqueríaCS")
+    builder.Configuration.GetConnectionString("ChilaquerÃ­aCS")
     ));
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
+});
 
 builder.Services.AddScoped<AccountLogic>();
 builder.Services.AddScoped<ProductsLogic>();
 
 builder.Services.AddScoped<IAccountService, AccountService>();
+
 
 var app = builder.Build();
 
