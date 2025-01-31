@@ -20,10 +20,6 @@ namespace Chilaqueria_API.Controllers.BussinessLogic
 
         private readonly AccountService _accountService;
 
-        public AccountLogic(AccountService accountService)
-        {
-            _accountService = accountService;
-        }
 
         public  GlobalResponse<object> _GetAllActiveUsers(ChilaqueriaDBContext _db)
         {
@@ -32,8 +28,8 @@ namespace Chilaqueria_API.Controllers.BussinessLogic
             Stopwatch _stopwatch = Stopwatch.StartNew();
             try
             {
-                //var data = _db.Prod_Users.Where(x => x.User_active).ToList();
-                var data = _accountService.GetAllUsersAsync();
+                var data = _db.Prod_Users.Where(x => x.User_active).ToList();
+                //var data = _accountService.GetAllUsersAsync();
                 msg = "Aquí están los usuarios activos";
                 _codeRes = 200;
                 _oResponse = _rh.MakeGlobalResponse(data, msg, _stopwatch, _codeRes);

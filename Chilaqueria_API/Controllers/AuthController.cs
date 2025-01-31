@@ -1,50 +1,65 @@
-[ApiController]
-[Route("api/[controller]")]
-public class AuthController : ControllerBase
+using Chilaqueria_API.Controllers.BussinessLogic;
+using Chilaqueria_API.Datos;
+using Chilaqueria_API.Handlers;
+using Chilaqueria_API.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using static Chilaqueria_API.Models.Globals;
+
+namespace Chilaqueria_API.Controllers
 {
-    private readonly IConfiguration _configuration;
-
-    public AuthController(IConfiguration configuration)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
     {
-        _configuration = configuration;
-    }
+        private readonly IConfiguration _configuration;
 
-    [HttpPost("login")]
-    public IActionResult Login([FromBody] UserLogin user)
-    {
-        if (user.Username == "admin" && user.Password == "password") // Reemplaza con tu lógica de autenticación
+        public AuthController(IConfiguration configuration)
         {
-            var token = GenerateJwtToken(user.Username);
-            return Ok(new { token });
+            _configuration = configuration;
         }
-        return Unauthorized();
-    }
 
-    private string GenerateJwtToken(string username)
-    {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] UserLogin user)
         {
+            if (user.Username == "admin" && user.Password == "password") // Reemplaza con tu lógica de autenticación
+            {
+                var token = GenerateJwtToken(user.Username);
+                return Ok(new { token });
+            }
+            return Unauthorized();
+        }
+
+        private string GenerateJwtToken(string username)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
             new Claim(ClaimTypes.Name, username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddHours(1),
-            signingCredentials: credentials
-        );
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: credentials
+            );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
-}
 
-public class UserLogin
-{
-    public string Username { get; set; }
-    public string Password { get; set; }
+    public class UserLogin
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
 }

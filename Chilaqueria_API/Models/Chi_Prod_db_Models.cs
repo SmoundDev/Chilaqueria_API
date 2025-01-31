@@ -6,6 +6,7 @@ namespace Chilaqueria_API.Models
     {
         public class Prod_Users
         {
+            [Key]
             public Guid User_guid { get; set; }
 
             public string User_username { get; set; }

@@ -1,7 +1,10 @@
 using Chilaqueria_API.Controllers.BussinessLogic;
 using Chilaqueria_API.Datos;
 using Chilaqueria_API.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 //using WebApiEntityFrameworkDockerSqlServer.Data;
 
@@ -40,8 +43,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<AccountLogic>();
 builder.Services.AddScoped<ProductsLogic>();
 
-builder.Services.AddScoped<IAccountService, AccountService>();
-
+//builder.Services.AddScoped<IAccountService, AccountService>();
+//shttps://www.youtube.com/shorts/vOb2GU7AR7w
+//shttps://www.youtube.com/shorts/rmQOWUWy2JQ
 
 var app = builder.Build();
 
