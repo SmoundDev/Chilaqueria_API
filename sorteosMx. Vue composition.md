@@ -1012,4 +1012,771 @@ const displayMultiplicador = computed(() => {
 <template>
   <div class="progress-section">
     <div class="progress-header">
-      <span class="progress-title">
+      <span class="progress-title">Progreso del Sorteo</span>
+      <span class="progress-alert" :class="alertClass">{{ alertText }}</span>
+    </div>
+    <div class="progress-bar">
+      <div 
+        class="progress-fill" 
+        :style="{ width: `${progressPercentage}%` }"
+      ></div>
+    </div>
+    <div class="progress-stats">
+      <span>{{ vendidos }} boletos vendidos</span>
+      <span>{{ disponibles }} disponibles de {{ total }}</span>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  total: {
+    type: Number,
+    default: 1000
+  },
+  vendidos: {
+    type: Number,
+    default: 0
+  },
+  disponibles: {
+    type: Number,
+    default: 1000
+  },
+  loading: Boolean
+})
+
+const progressPercentage = computed(() => {
+  if (props.loading) return 0
+  return (props.vendidos / props.total) * 100
+})
+
+const alertClass = computed(() => {
+  const percentage = progressPercentage.value
+  if (percentage >= 90) return 'critical'
+  if (percentage >= 75) return 'warning'
+  return 'normal'
+})
+
+const alertText = computed(() => {
+  const percentage = progressPercentage.value
+  if (percentage >= 95) return '¡Últimos boletos!'
+  if (percentage >= 90) return '¡Quedan muy pocos!'
+  if (percentage >= 75) return '¡Quedan pocos!'
+  return 'Disponibles'
+})
+</script>
+
+<style scoped>
+.progress-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.progress-title {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.progress-alert {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.progress-alert.normal {
+  color: #48bb78;
+}
+
+.progress-alert.warning {
+  color: #ed8936;
+}
+
+.progress-alert.critical {
+  color: #e53e3e;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.5; }
+}
+
+.progress-bar {
+  width: 100%;
+  height: 1rem;
+  background: #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  border-radius: 0.5rem;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #718096;
+}
+</style>
+```
+
+## ⏰ components/sorteo-detail/CountdownTimer.vue
+
+```vue
+<template>
+  <div class="countdown-section">
+    <div class="countdown-title">
+      <i class="fas fa-clock"></i> Tiempo restante para participar
+    </div>
+    <div class="countdown-display">
+      <div class="countdown-item">
+        <span class="countdown-number">{{ days }}</span>
+        <span class="countdown-label">Días</span>
+      </div>
+      <div class="countdown-item">
+        <span class="countdown-number">{{ hours }}</span>
+        <span class="countdown-label">Horas</span>
+      </div>
+      <div class="countdown-item">
+        <span class="countdown-number">{{ minutes }}</span>
+        <span class="countdown-label">Min</span>
+      </div>
+      <div class="countdown-item">
+        <span class="countdown-number">{{ seconds }}</span>
+        <span class="countdown-label">Seg</span>
+      </div>
+    </div>
+    <div v-if="timeRemaining <= 0" class="expired-message">
+      ⏰ Este sorteo ha terminado
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+const props = defineProps({
+  endDate: {
+    type: String,
+    required: true
+  }
+})
+
+const timeRemaining = ref(0)
+let intervalId = null
+
+const days = computed(() => Math.floor(timeRemaining.value / (1000 * 60 * 60 * 24)).toString().padStart(2, '0'))
+const hours = computed(() => Math.floor((timeRemaining.value % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'))
+const minutes = computed(() => Math.floor((timeRemaining.value % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'))
+const seconds = computed(() => Math.floor((timeRemaining.value % (1000 * 60)) / 1000).toString().padStart(2, '0'))
+
+const updateCountdown = () => {
+  const targetDate = new Date(props.endDate).getTime()
+  const now = new Date().getTime()
+  timeRemaining.value = Math.max(0, targetDate - now)
+}
+
+onMounted(() => {
+  updateCountdown()
+  intervalId = setInterval(updateCountdown, 1000)
+})
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+})
+</script>
+
+<style scoped>
+.countdown-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.countdown-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.countdown-display {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.countdown-item {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  min-width: 60px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.countdown-item:hover {
+  transform: scale(1.05);
+}
+
+.countdown-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: block;
+}
+
+.countdown-label {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.expired-message {
+  color: #e53e3e;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .countdown-display {
+    gap: 0.5rem;
+  }
+
+  .countdown-item {
+    padding: 0.75rem 0.5rem;
+    min-width: 50px;
+  }
+
+  .countdown-number {
+    font-size: 1.2rem;
+  }
+}
+</style>
+```
+
+## 🎫 components/sorteo-detail/TicketDisplay.vue
+
+```vue
+<template>
+  <div class="ticket-section" :class="{ 'has-ticket': !!ticket }">
+    <div v-if="!ticket" class="ticket-placeholder">
+      <i class="fas fa-ticket-alt ticket-icon"></i>
+      <p>Tu boleto aparecerá aquí después de la compra</p>
+    </div>
+    
+    <div v-else class="ticket-display">
+      <div class="ticket-number">#{{ ticket.numero }}</div>
+      <div class="ticket-info">Tu boleto para {{ sorteoName }}</div>
+      <div class="ticket-opportunities">
+        🎯 {{ opportunities }} oportunidades incluidas
+      </div>
+      <div class="ticket-date">
+        Comprado el {{ formatDate(ticket.fecha) }}
+      </div>
+    </div>
+    
+    <p v-if="ticket" class="confirmation-message">
+      <i class="fas fa-check-circle"></i> ¡Participación confirmada!
+    </p>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  ticket: Object,
+  sorteoName: String,
+  opportunities: Number
+})
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+</script>
+
+<style scoped>
+.ticket-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  text-align: center;
+  border: 2px dashed #e2e8f0;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.ticket-section.has-ticket {
+  border-color: #48bb78;
+  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  transform: scale(1.02);
+}
+
+.ticket-placeholder {
+  color: #a0aec0;
+}
+
+.ticket-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.ticket-placeholder p {
+  font-style: italic;
+  margin: 0;
+}
+
+.ticket-display {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+  color: #2d3748;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  margin-bottom: 1rem;
+  transform: rotateX(0deg);
+  transition: transform 0.3s ease;
+}
+
+.ticket-display:hover {
+  transform: rotateX(5deg) rotateY(5deg);
+}
+
+.ticket-number {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.ticket-info {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.ticket-opportunities {
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.ticket-date {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.confirmation-message {
+  color: #48bb78;
+  font-weight: 600;
+  margin: 1rem 0 0 0;
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+```
+
+## 🎯 composables/useSorteoDetail.js
+
+```js
+import { ref, reactive } from 'vue'
+
+export function useSorteoDetail(sorteoId) {
+  const sorteo = ref(null)
+  const loading = ref(false)
+  const participating = ref(false)
+  const userTicket = ref(null)
+  const error = ref(null)
+
+  // Simular API call para obtener detalles del sorteo
+  const fetchSorteoDetail = async () => {
+    if (!sorteoId) return
+
+    loading.value = true
+    error.value = null
+
+    try {
+      // Simular delay de API
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Datos simulados - en producción vendría de la API
+      const sorteoData = {
+        id: sorteoId,
+        nombre: 'iPhone 15 Pro Max',
+        descripcion: 'Último modelo de Apple con 256GB - Color Titanio Natural',
+        descripcion_completa: 'Participa por la oportunidad de ganar el nuevo iPhone 15 Pro Max en su elegante color Titanio Natural con 256GB de almacenamiento. Este dispositivo representa lo último en tecnología móvil de Apple.',
+        precio: 150,
+        multiplicador: 60,
+        total: 1000,
+        vendidos: 750,
+        disponibles: 250,
+        fecha_fin: '2025-08-15T23:59:59',
+        imagenes: [
+          'https://images.unsplash.com/photo-1592286062464-b91080b98d6f?w=600&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=600&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=600&fit=crop'
+        ],
+        especificaciones: [
+          'iPhone 15 Pro Max 256GB - Titanio Natural',
+          'Cable USB-C a USB-C trenzado (1 metro)',
+          'Documentación y herramientas',
+          'Caja original sellada',
+          'Garantía oficial de Apple por 1 año'
+        ],
+        caracteristicas: [
+          'Sistema de cámaras Pro con teleobjetivo 5x',
+          'Chip A17 Pro con GPU de 6 núcleos',
+          'Pantalla Super Retina XDR de 6.7 pulgadas',
+          'Diseño resistente con Titanio grado 5',
+          'Action Button personalizable',
+          'USB-C con velocidades USB 3'
+        ]
+      }
+
+      sorteo.value = sorteoData
+    } catch (err) {
+      error.value = 'Error al cargar los detalles del sorteo'
+      console.error('Error fetching sorteo details:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Simular participación en sorteo
+  const participateInSorteo = async () => {
+    if (participating.value || userTicket.value) return
+
+    participating.value = true
+
+    try {
+      // Simular proceso de compra
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Generar ticket simulado
+      const ticket = {
+        numero: Math.floor(Math.random() * 900000) + 100000,
+        sorteo_id: sorteoId,
+        fecha: new Date().toISOString(),
+        estado: 'activo',
+        oportunidades: sorteo.value?.multiplicador || 60
+      }
+
+      userTicket.value = ticket
+      
+      // Actualizar disponibilidad del sorteo
+      if (sorteo.value) {
+        sorteo.value.disponibles -= 1
+        sorteo.value.vendidos += 1
+      }
+
+    } catch (err) {
+      error.value = 'Error al procesar la participación'
+      console.error('Error participating in sorteo:', err)
+      throw err
+    } finally {
+      participating.value = false
+    }
+  }
+
+  // Verificar si el usuario ya tiene un ticket
+  const checkUserTicket = async () => {
+    // En producción, verificar en la API si el usuario ya participó
+    // Por ahora, no hacer nada
+  }
+
+  return {
+    sorteo,
+    loading,
+    participating,
+    userTicket,
+    error,
+    fetchSorteoDetail,
+    participateInSorteo,
+    checkUserTicket
+  }
+}
+```
+
+## 🔄 components/SorteoCard.vue (Modificado)
+
+```vue
+<template>
+  <div class="sorteo-card">
+    <div class="sorteo-header">
+      <div class="sorteo-info">
+        <h3>{{ sorteo.nombre }}</h3>
+        <p>{{ sorteo.descripcion }}</p>
+      </div>
+      <div class="opportunity-badge">
+        1 boleto = {{ sorteo.multiplicador }} oportunidades
+      </div>
+    </div>
+    
+    <div class="sorteo-image" @click="$emit('ver-detalle', sorteo)">
+      <img :src="sorteo.imagen" :alt="sorteo.nombre">
+      <div class="image-overlay">
+        <i class="fas fa-eye"></i>
+        <span>Ver detalles</span>
+      </div>
+    </div>
+
+    <div class="sorteo-details">
+      <div class="detail-row">
+        <span class="detail-label">Precio del boleto:</span>
+        <span class="detail-value">${{ sorteo.precio }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Boletos disponibles:</span>
+        <span class="detail-value">{{ sorteo.disponibles }}/{{ sorteo.total }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Termina:</span>
+        <span class="detail-value">{{ formatDate(sorteo.fecha_fin) }}</span>
+      </div>
+
+      <div class="progress-bar">
+        <div 
+          class="progress-fill" 
+          :style="{ width: `${(sorteo.vendidos/sorteo.total)*100}%` }"
+        ></div>
+      </div>
+
+      <div class="card-actions">
+        <button 
+          @click="$emit('ver-detalle', sorteo)"
+          class="detail-btn"
+        >
+          <i class="fas fa-info-circle"></i> Ver Detalles
+        </button>
+        
+        <button 
+          @click="$emit('comprar', sorteo)"
+          :disabled="!isLoggedIn || sorteo.disponibles === 0"
+          class="buy-btn"
+        >
+          <i class="fas fa-ticket-alt"></i>
+          {{ sorteo.disponibles === 0 ? 'Agotado' : 'Participar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  sorteo: Object,
+  isLoggedIn: Boolean
+})
+
+defineEmits(['comprar', 'ver-detalle'])
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-ES', { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric' 
+  })
+}
+</script>
+
+<style scoped>
+/* Estilos existentes más estos nuevos */
+.sorteo-image {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sorteo-image:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.detail-btn {
+  flex: 1;
+  background: #4299e1;
+  color: white;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.detail-btn:hover {
+  background: #3182ce;
+  transform: translateY(-1px);
+}
+
+.buy-btn {
+  flex: 2;
+  background: #ffd700;
+  color: #0984e3;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.buy-btn:hover:not(:disabled) {
+  background: #ffed4e;
+  transform: translateY(-2px);
+}
+
+.buy-btn:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}
+</style>
+```
+
+## 📦 Dependencias Adicionales para package.json
+
+```json
+{
+  "dependencies": {
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
+```
+
+## 🔄 Instrucciones de Instalación y Uso
+
+```bash
+# Instalar Vue Router
+npm install vue-router@4
+
+# Estructura de archivos a crear:
+# 1. Crear carpeta src/router/
+# 2. Crear carpeta src/views/
+# 3. Crear carpeta src/components/sorteo-detail/
+# 4. Copiar todos los componentes mostrados arriba
+# 5. Modificar main.js para incluir el router
+
+# Ejecutar
+npm run dev
+```
+
+## 🎯 Funcionalidades Implementadas
+
+### ✅ **Navegación Inteligente:**
+- **Precarga de datos** - Nombre, descripción, precio e imagen se muestran inmediatamente
+- **Consulta en tiempo real** - Los datos actualizados llegan desde la API
+- **Fallbacks elegantes** - Skeletons y placeholders mientras carga
+
+### ✅ **Componentes Modulares:**
+- **SorteoDetail** - Componente principal que orquesta todo
+- **ImageGallery** - Galería de imágenes interactiva
+- **SorteoInfo** - Información básica con precarga
+- **ProgressSection** - Barra de progreso en tiempo real
+- **CountdownTimer** - Contador regresivo funcional
+- **TicketDisplay** - Visualización del boleto generado
+
+### ✅ **UX Optimizada:**
+- **Estados de carga** - Indicators visuales para cada sección
+- **Responsive design** - Perfecto en todos los dispositivos
+- **Navegación fluida** - Router con parámetros y query strings
+- **Validaciones** - Botones deshabilitados según estado
+
+### ✅ **Integración Completa:**
+- **Modificación de SorteoCard** - Botón "Ver Detalles" agregado
+- **Router configurado** - Rutas parametrizadas
+- **Composable de detalle** - Lógica reutilizable
+- **Props y emits** - Comunicación entre componentes
+
+¿Te gusta cómo quedó la integración? ¿Hay algún componente que quieras que ajuste o alguna funcionalidad adicional?
